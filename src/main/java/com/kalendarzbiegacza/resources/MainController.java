@@ -4,15 +4,11 @@ import com.kalendarzbiegacza.domain.Race;
 import com.kalendarzbiegacza.domain.RaceLinkedWebsite;
 import com.kalendarzbiegacza.domain.repository.RaceLinkedWebsiteRepository;
 import com.kalendarzbiegacza.domain.repository.RaceRepository;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.query.Query;
-import org.hibernate.sql.ordering.antlr.Factory;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.provider.HibernateUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,8 +30,6 @@ public class MainController {
     public @ResponseBody int addNewRace (@RequestParam String name,
                                             @RequestParam String date/*(d)d.(m)m.yyyy*/ , @RequestParam String distance,
                                             @RequestParam String city, @RequestParam String fileUrl) {
-        // @ResponseBody means the returned String is the response, not a view name
-        // @RequestParam means it is a parameter from the GET or POST request
 
         Race newRace = new Race();
         newRace.setName(name);
@@ -72,6 +66,24 @@ public class MainController {
     public @ResponseBody Map<String, Iterable<RaceLinkedWebsite>> findWebsitesByRaceId(@RequestParam int raceId) {
         Map<String, Iterable<RaceLinkedWebsite>> result = new HashMap<>();
         result.put("result", raceLinkedWebsiteRepository.findWebsitesByRaceId(raceId));
+        return result;
+    }
+
+    @GetMapping(path="/findRacesByParams")
+    public @ResponseBody Map<String, Iterable<Race>> findRaceByParams
+            (@RequestParam(required = false) String city, @RequestParam int year,  @RequestParam int month, @RequestParam int dayFrom, @RequestParam int dayTo) {
+
+        Map<String, Iterable<Race>> result = new HashMap<>();
+        Calendar calendarFrom = Calendar.getInstance();
+        Calendar calendarTo = Calendar.getInstance();
+        calendarFrom.set(year, month, dayFrom);
+        calendarTo.set(year, month, dayTo + 1);
+
+        if(city != null)
+            result.put("result", raceRepository.findByDatesRangeAndCity(city, calendarFrom, calendarTo));
+        else
+            result.put("result", raceRepository.findByDatesRange(calendarFrom, calendarTo));
+
         return result;
     }
 
